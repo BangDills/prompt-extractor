@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image to Prompt — Ubah Gambar Jadi Prompt AI</title>
+  <meta name="description" content="Upload gambar dan dapatkan prompt AI siap pakai untuk Stable Diffusion, Midjourney, DALL-E, dan Flux." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="logo">
+        <span class="logo-icon">🎨</span>
+        Image to Prompt
+      </h1>
+      <button id="settingsBtn" class="icon-btn" title="Pengaturan API Key" aria-label="Pengaturan">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <section class="hero">
+      <h2>Ubah gambar apa pun menjadi prompt AI</h2>
+      <p>Upload foto, lalu dapatkan prompt siap pakai untuk Midjourney, Stable Diffusion, DALL·E, atau Flux.</p>
+    </section>
+
+    <section class="workspace">
+      <!-- UPLOAD AREA -->
+      <div class="card upload-card">
+        <label for="fileInput" id="dropzone" class="dropzone">
+          <div class="dropzone-content" id="dropzoneContent">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p class="dropzone-title">Tarik & lepas gambar di sini</p>
+            <p class="dropzone-hint">atau klik untuk memilih file (JPG, PNG, WebP — maks. 10MB)</p>
+          </div>
+          <img id="preview" alt="Preview" hidden />
+          <button type="button" id="clearBtn" class="clear-btn" hidden aria-label="Hapus gambar">×</button>
+        </label>
+        <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden />
+
+        <div class="controls">
+          <div class="control-group">
+            <label for="styleSelect">Gaya prompt</label>
+            <select id="styleSelect">
+              <option value="midjourney">Midjourney</option>
+              <option value="stable-diffusion">Stable Diffusion</option>
+              <option value="dalle">DALL·E 3</option>
+              <option value="flux">Flux</option>
+              <option value="descriptive">Deskriptif (natural language)</option>
+              <option value="danbooru">Danbooru tags (anime)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="langSelect">Bahasa</label>
+            <select id="langSelect">
+              <option value="en">English</option>
+              <option value="id">Bahasa Indonesia</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="generateBtn" class="primary-btn" disabled>
+          <span class="btn-text">Generate Prompt</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+      </div>
+
+      <!-- RESULT AREA -->
+      <div class="card result-card">
+        <div class="result-header">
+          <h3>Hasil Prompt</h3>
+          <div class="result-actions">
+            <button id="copyBtn" class="secondary-btn" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+        <textarea id="result" placeholder="Prompt akan muncul di sini setelah kamu upload gambar dan klik 'Generate Prompt'..." readonly></textarea>
+        <div id="errorBox" class="error-box" hidden></div>
+      </div>
+    </section>
+
+    <section class="tips">
+      <h3>Tips:</h3>
+      <ul>
+        <li>Gunakan gambar dengan resolusi jelas untuk hasil terbaik.</li>
+        <li>Pilih gaya prompt sesuai tool AI yang kamu gunakan.</li>
+        <li>Prompt bisa kamu edit lebih lanjut sesuai kebutuhan.</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Pengaturan API Key</h3>
+        <button class="icon-btn" data-close aria-label="Tutup">×</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Aplikasi ini menggunakan <strong>Google Gemini API</strong> (gratis).
+          API key disimpan <strong>hanya di browser kamu</strong> (localStorage), tidak dikirim ke server mana pun.
+        </p>
+        <label for="apiKeyInput">Gemini API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="AIza..." />
+        <p class="hint">
+          Belum punya? Dapatkan gratis di
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.
+        </p>
+
+        <label for="modelSelect">Model</label>
+        <select id="modelSelect">
+          <option value="gemini-2.0-flash">Gemini 2.0 Flash (cepat, gratis)</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button id="clearKeyBtn" class="secondary-btn">Hapus Key</button>
+        <button id="saveKeyBtn" class="primary-btn">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Dibuat dengan ❤️ · Gambar & API key kamu tidak disimpan di server mana pun.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
