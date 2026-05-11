@@ -15,9 +15,15 @@
         <span class="logo-icon">🎨</span>
         Image to Prompt
       </h1>
-      <button id="settingsBtn" class="icon-btn" title="Pengaturan API Key" aria-label="Pengaturan">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      </button>
+      <div class="header-actions">
+        <button id="historyBtn" class="icon-btn" title="Riwayat (H)" aria-label="Riwayat">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+          <span class="badge" id="historyCount" hidden>0</span>
+        </button>
+        <button id="settingsBtn" class="icon-btn" title="Pengaturan (Cmd/Ctrl+K)" aria-label="Pengaturan">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -34,12 +40,38 @@
           <div class="dropzone-content" id="dropzoneContent">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <p class="dropzone-title">Tarik & lepas gambar di sini</p>
-            <p class="dropzone-hint">atau klik untuk memilih file (JPG, PNG, WebP — maks. 10MB)</p>
+            <p class="dropzone-hint">klik untuk pilih file, paste (Ctrl+V), atau gunakan tombol di bawah</p>
           </div>
           <img id="preview" alt="Preview" hidden />
           <button type="button" id="clearBtn" class="clear-btn" hidden aria-label="Hapus gambar">×</button>
         </label>
         <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden />
+
+        <!-- Input source buttons -->
+        <div class="source-buttons">
+          <button type="button" id="webcamBtn" class="chip-btn" title="Ambil dari kamera">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            Webcam
+          </button>
+          <button type="button" id="urlBtn" class="chip-btn" title="Muat dari URL">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            URL
+          </button>
+          <button type="button" id="demoBtn" class="chip-btn" title="Coba gambar contoh">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            Demo
+          </button>
+        </div>
+
+        <!-- Image metadata + color palette -->
+        <div id="imageInfo" class="image-info" hidden>
+          <div class="meta-row">
+            <span id="metaDimensions" class="meta-item"></span>
+            <span id="metaSize" class="meta-item"></span>
+            <span id="metaFormat" class="meta-item"></span>
+          </div>
+          <div id="paletteRow" class="palette-row" title="Palet warna dominan (klik untuk copy hex)"></div>
+        </div>
 
         <div class="controls">
           <div class="control-group">
@@ -49,7 +81,7 @@
               <option value="stable-diffusion">Stable Diffusion</option>
               <option value="dalle">DALL·E 3</option>
               <option value="flux">Flux</option>
-              <option value="descriptive">Deskriptif (natural language)</option>
+              <option value="descriptive">Deskriptif (natural)</option>
               <option value="danbooru">Danbooru tags (anime)</option>
             </select>
           </div>
@@ -61,12 +93,38 @@
               <option value="id">Bahasa Indonesia</option>
             </select>
           </div>
+
+          <div class="control-group">
+            <label for="lengthSelect">Panjang</label>
+            <select id="lengthSelect">
+              <option value="concise">Ringkas</option>
+              <option value="balanced" selected>Seimbang</option>
+              <option value="detailed">Detail</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="creativityRange">Kreativitas <span id="creativityValue" class="slider-value">0.7</span></label>
+            <input type="range" id="creativityRange" min="0" max="1.5" step="0.1" value="0.7" />
+          </div>
         </div>
 
-        <button id="generateBtn" class="primary-btn" disabled>
-          <span class="btn-text">Generate Prompt</span>
-          <span class="btn-spinner" hidden></span>
-        </button>
+        <!-- Enhancer chips -->
+        <div class="enhancers">
+          <label class="enhancers-label">Enhancer (opsional)</label>
+          <div class="enhancers-grid" id="enhancersGrid"></div>
+        </div>
+
+        <!-- Main action buttons -->
+        <div class="action-buttons">
+          <button id="generateBtn" class="primary-btn" disabled>
+            <span class="btn-text">Generate Prompt</span>
+            <span class="btn-spinner" hidden></span>
+          </button>
+          <button id="regenerateBtn" class="secondary-btn" disabled title="Hasilkan variasi baru">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          </button>
+        </div>
       </div>
 
       <!-- RESULT AREA -->
@@ -74,23 +132,46 @@
         <div class="result-header">
           <h3>Hasil Prompt</h3>
           <div class="result-actions">
+            <button id="negBtn" class="secondary-btn" disabled title="Generate negative prompt (untuk Stable Diffusion)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+              <span>Negative</span>
+            </button>
+            <button id="downloadBtn" class="secondary-btn" disabled title="Download sebagai .txt">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </button>
             <button id="copyBtn" class="secondary-btn" disabled>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               <span>Copy</span>
             </button>
           </div>
         </div>
-        <textarea id="result" placeholder="Prompt akan muncul di sini setelah kamu upload gambar dan klik 'Generate Prompt'..." readonly></textarea>
+        <textarea id="result" placeholder="Prompt akan muncul di sini setelah kamu upload gambar dan klik 'Generate Prompt'..."></textarea>
+
+        <div id="negResultWrap" class="neg-result" hidden>
+          <div class="result-header">
+            <h4>Negative Prompt</h4>
+            <button id="copyNegBtn" class="secondary-btn small-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <textarea id="negResult"></textarea>
+        </div>
+
+        <div class="result-footer">
+          <span id="charCount" class="char-count">0 karakter · 0 kata</span>
+        </div>
+
         <div id="errorBox" class="error-box" hidden></div>
       </div>
     </section>
 
     <section class="tips">
-      <h3>Tips:</h3>
+      <h3>Shortcuts & tips</h3>
       <ul>
-        <li>Gunakan gambar dengan resolusi jelas untuk hasil terbaik.</li>
-        <li>Pilih gaya prompt sesuai tool AI yang kamu gunakan.</li>
-        <li>Prompt bisa kamu edit lebih lanjut sesuai kebutuhan.</li>
+        <li><kbd>Ctrl/Cmd + Enter</kbd> — Generate prompt</li>
+        <li><kbd>Ctrl/Cmd + K</kbd> — Pengaturan · <kbd>H</kbd> — Riwayat · <kbd>Ctrl/Cmd + V</kbd> — Paste gambar</li>
+        <li>Klik swatch palet warna untuk copy hex code.</li>
       </ul>
     </section>
   </main>
@@ -109,7 +190,7 @@
           API key disimpan <strong>hanya di browser kamu</strong> (localStorage), tidak dikirim ke server mana pun.
         </p>
         <label for="apiKeyInput">Gemini API Key</label>
-        <input type="password" id="apiKeyInput" placeholder="AIza..." />
+        <input type="password" id="apiKeyInput" placeholder="AIza..." autocomplete="off" />
         <p class="hint">
           Belum punya? Dapatkan gratis di
           <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.
@@ -128,6 +209,69 @@
       </div>
     </div>
   </div>
+
+  <!-- HISTORY MODAL -->
+  <div id="historyModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-content modal-wide">
+      <div class="modal-header">
+        <h3>Riwayat Prompt</h3>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button id="clearHistoryBtn" class="secondary-btn small-btn">Bersihkan</button>
+          <button class="icon-btn" data-close aria-label="Tutup">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="historyList" class="history-list">
+          <p class="history-empty">Belum ada riwayat. Generate prompt pertamamu!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- URL INPUT MODAL -->
+  <div id="urlModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Muat Gambar dari URL</h3>
+        <button class="icon-btn" data-close aria-label="Tutup">×</button>
+      </div>
+      <div class="modal-body">
+        <label for="urlInput">URL gambar</label>
+        <input type="text" id="urlInput" placeholder="https://example.com/image.jpg" />
+        <p class="hint">
+          Catatan: beberapa server memblokir request dari browser (CORS). Jika gagal, download dulu lalu upload manual.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary-btn" data-close>Batal</button>
+        <button id="loadUrlBtn" class="primary-btn">Muat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEBCAM MODAL -->
+  <div id="webcamModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Ambil Foto dari Webcam</h3>
+        <button class="icon-btn" data-close aria-label="Tutup">×</button>
+      </div>
+      <div class="modal-body">
+        <video id="webcamVideo" autoplay playsinline muted class="webcam-video"></video>
+        <canvas id="webcamCanvas" hidden></canvas>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary-btn" data-close>Batal</button>
+        <button id="captureBtn" class="primary-btn">📸 Ambil Foto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast" hidden></div>
 
   <footer class="site-footer">
     <div class="container">
