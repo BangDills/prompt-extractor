@@ -1,40 +1,50 @@
 /* ======================================================================
-   Image to Prompt - main logic
+   Image to Prompt — Logic
+   Vanilla JS, zero dependencies, full client-side
    ====================================================================== */
 
-// ----- Storage keys -----
-const STORAGE_KEY_API = "imgprompt.apiKey";
-const STORAGE_KEY_MODEL = "imgprompt.model";
+// ── Constants ────────────────────────────────────────────────────────────
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_TYPES = /^image\/(png|jpeg|webp)$/;
 
-// ----- Elements -----
-const $ = (id) => document.getElementById(id);
-const fileInput = $("fileInput");
-const dropzone = $("dropzone");
-const dropzoneContent = $("dropzoneContent");
-const preview = $("preview");
-const clearBtn = $("clearBtn");
-const generateBtn = $("generateBtn");
-const styleSelect = $("styleSelect");
-const langSelect = $("langSelect");
-const resultBox = $("result");
-const copyBtn = $("copyBtn");
-const errorBox = $("errorBox");
-const settingsBtn = $("settingsBtn");
-const settingsModal = $("settingsModal");
-const apiKeyInput = $("apiKeyInput");
-const modelSelect = $("modelSelect");
-const saveKeyBtn = $("saveKeyBtn");
-const clearKeyBtn = $("clearKeyBtn");
-const btnText = generateBtn.querySelector(".btn-text");
-const btnSpinner = generateBtn.querySelector(".btn-spinner");
+const STORAGE_KEYS = {
+  apiKey: "imgprompt.apiKey",
+  model: "imgprompt.model",
+};
 
-// ----- State -----
+// Gemini API endpoint template
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+
+// ── DOM refs (lazy) ─────────────────────────────────────────────────────
+const dom = {
+  get fileInput() { return document.getElementById("fileInput"); },
+  get dropzone() { return document.getElementById("dropzone"); },
+  get dropzoneContent() { return document.getElementById("dropzoneContent"); },
+  get preview() { return document.getElementById("preview"); },
+  get clearBtn() { return document.getElementById("clearBtn"); },
+  get generateBtn() { return document.getElementById("generateBtn"); },
+  get styleSelect() { return document.getElementById("styleSelect"); },
+  get langSelect() { return document.getElementById("langSelect"); },
+  get resultBox() { return document.getElementById("result"); },
+  get copyBtn() { return document.getElementById("copyBtn"); },
+  get errorBox() { return document.getElementById("errorBox"); },
+  get statusMessage() { return document.getElementById("statusMessage"); },
+  get settingsBtn() { return document.getElementById("settingsBtn"); },
+  get settingsModal() { return document.getElementById("settingsModal"); },
+  get apiKeyInput() { return document.getElementById("apiKeyInput"); },
+  get modelSelect() { return document.getElementById("modelSelect"); },
+  get saveKeyBtn() { return document.getElementById("saveKeyBtn"); },
+  get clearKeyBtn() { return document.getElementById("clearKeyBtn"); },
+  get toggleKeyVisibility() { return document.getElementById("toggleKeyVisibility"); },
+  get btnText() { return document.querySelector(".btn-text"); },
+  get btnSpinner() { return document.querySelector(".btn-spinner"); },
+};
+
+// ── State ────────────────────────────────────────────────────────────────
 let currentImage = null; // { base64, mimeType, dataUrl }
 
-// ======================================================================
-// STYLE-SPECIFIC INSTRUCTIONS (sent to Gemini)
-// ======================================================================
-const STYLE_INSTRUCTIONS = {
+// ── Style-specific instructions for Gemini ───────────────────────────────
+const STYLE_INSTRUCTIONS = Object.freeze({
   midjourney: `Describe this image as a Midjourney prompt.
 - Start with the main subject and action.
 - Add visual style, composition, lighting, color palette, mood.
@@ -71,75 +81,327 @@ const STYLE_INSTRUCTIONS = {
 - Include: character count, hair, eyes, clothing, pose, expression, background, composition tags.
 - Add quality tags like "masterpiece, best quality" at the start if appropriate.
 - Return ONLY the tag list. No preamble, no markdown, no quotes.`,
-};
+});
 
-// ======================================================================
-// INITIALIZATION
-// ======================================================================
-function init() {
-  // Restore model preference
-  const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
-  if (savedModel) modelSelect.value = savedModel;
+// Indonesian language instruction suffix
+const LANG_INSTRUCTIONS = Object.freeze({
+  en: "",
+  id: "\n\nIMPORTANT: Write the final prompt in Bahasa Indonesia (natural, fluent Indonesian, not a literal translation of English).",
+});
 
-  // File input handlers
-  fileInput.addEventListener("change", onFileSelected);
+// ── Helpers ──────────────────────────────────────────────────────────────
 
-  // Drag & drop
-  ["dragenter", "dragover"].forEach((ev) =>
-    dropzone.addEventListener(ev, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dropzone.classList.add("drag-over");
-    })
-  );
-  ["dragleave", "drop"].forEach((ev) =>
-    dropzone.addEventListener(ev, (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dropzone.classList.remove("drag-over");
-    })
-  );
-  dropzone.addEventListener("drop", onDrop);
+/** Format error message with consistent prefix */
+function formatError(msg, status = null) {
+  let out = `Error: ${msg}`;
+  if (status) {
+    const hints = { 400: "Cek apakah API key valid.", 403: "API key ditolak — pastikan sudah aktif untuk Generative Language API.", 429: "Kuota habis — coba lagi nanti atau ganti model." };
+    if (hints[status]) out += `\n${hints[status]}`;
+  }
+  return out;
+}
 
-  // Paste from clipboard
-  document.addEventListener("paste", onPaste);
+/** Show a transient status message (for success/fyi, not error) */
+function showStatus(msg, durationMs = 2500) {
+  const el = dom.statusMessage;
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => { el.hidden = true; }, durationMs);
+}
 
-  // Buttons
-  clearBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    clearImage();
+function showError(msg) {
+  dom.errorBox.textContent = msg;
+  dom.errorBox.hidden = false;
+}
+
+function hideError() {
+  dom.errorBox.textContent = "";
+  dom.errorBox.hidden = true;
+}
+
+/** Set loading state for the generate button */
+function setLoading(loading) {
+  dom.generateBtn.disabled = loading || !currentImage;
+  dom.generateBtn.setAttribute("aria-busy", loading);
+  dom.btnText.textContent = loading ? "Membuat prompt..." : "Generate Prompt";
+  dom.btnSpinner.hidden = !loading;
+}
+
+/** Enable / disable copy button based on result content */
+function updateCopyButton() {
+  dom.copyBtn.disabled = !dom.resultBox.value.trim();
+}
+
+// ── File handling ───────────────────────────────────────────────────────
+
+/**
+ * Load an image File object, validate, read as base64 data URL.
+ * @param {File} file
+ */
+function loadImageFile(file) {
+  hideError();
+
+  // Validate type
+  if (!file.type || !ALLOWED_TYPES.test(file.type)) {
+    showError("Format file tidak didukung. Gunakan gambar PNG, JPG, atau WebP.");
+    return;
+  }
+
+  // Validate size
+  if (file.size > MAX_FILE_SIZE) {
+    showError(`Ukuran file terlalu besar. Maksimal ${MAX_FILE_SIZE / 1024 / 1024}MB.`);
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    const dataUrl = /** @type {string} */ (reader.result);
+    const base64 = dataUrl.split(",")[1];
+    if (!base64) {
+      showError("Gagal membaca data gambar.");
+      return;
+    }
+    currentImage = { base64, mimeType: file.type, dataUrl };
+    showPreview(dataUrl);
+    dom.generateBtn.disabled = false;
+  };
+
+  reader.onerror = () => {
+    showError("Gagal membaca file. Coba lagi dengan gambar lain.");
+  };
+
+  reader.readAsDataURL(file);
+}
+
+/** Display the preview image and toggle UI elements */
+function showPreview(dataUrl) {
+  dom.preview.src = dataUrl;
+  dom.preview.hidden = false;
+  dom.dropzoneContent.hidden = true;
+  dom.clearBtn.hidden = false;
+}
+
+/** Clear current image and reset dropzone */
+function clearImage() {
+  currentImage = null;
+  dom.fileInput.value = "";
+  dom.preview.src = "";
+  dom.preview.hidden = true;
+  dom.dropzoneContent.hidden = false;
+  dom.clearBtn.hidden = true;
+  dom.generateBtn.disabled = true;
+  hideError();
+}
+
+// ── Gemini API ───────────────────────────────────────────────────────────
+
+/**
+ * Call the Gemini API to generate a prompt from an image.
+ * @param {{ apiKey: string, model: string, instruction: string, imageBase64: string, mimeType: string }} params
+ * @returns {Promise<string>} The generated prompt text
+ */
+async function callGemini({ apiKey, model, instruction, imageBase64, mimeType }) {
+  const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const payload = {
+    contents: [
+      {
+        parts: [
+          { text: instruction },
+          { inline_data: { mime_type: mimeType, data: imageBase64 } },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.95,
+      maxOutputTokens: 1024,
+    },
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
-  generateBtn.addEventListener("click", onGenerate);
-  copyBtn.addEventListener("click", onCopy);
 
-  // Settings modal
-  settingsBtn.addEventListener("click", openSettings);
-  settingsModal.addEventListener("click", (e) => {
-    if (e.target.dataset.close !== undefined) closeSettings();
-  });
-  saveKeyBtn.addEventListener("click", saveSettings);
-  clearKeyBtn.addEventListener("click", () => {
-    apiKeyInput.value = "";
-    localStorage.removeItem(STORAGE_KEY_API);
-    showError("API key dihapus.");
-    setTimeout(hideError, 2000);
-  });
+  if (!response.ok) {
+    let serverMsg = "";
+    try {
+      const errData = await response.json();
+      serverMsg = errData?.error?.message || "";
+    } catch {
+      // response not JSON — use status text
+      serverMsg = response.statusText || "";
+    }
+    const msg = serverMsg
+      ? `Gemini API error (${response.status}): ${serverMsg}`
+      : `Gemini API error (${response.status})`;
+    throw new Error(formatError(msg, response.status));
+  }
 
-  // Esc closes modal
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !settingsModal.hidden) closeSettings();
-  });
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts
+    ?.map((p) => p.text)
+    .filter(Boolean)
+    .join("\n")
+    .trim();
 
-  // Show settings on first load if no key
-  if (!localStorage.getItem(STORAGE_KEY_API)) {
+  if (!text) {
+    throw new Error("Gemini tidak mengembalikan teks. Coba lagi atau ganti gambar.");
+  }
+
+  return text;
+}
+
+/** Handle the Generate button click */
+async function onGenerate() {
+  hideError();
+
+  const apiKey = (localStorage.getItem(STORAGE_KEYS.apiKey) || "").trim();
+  if (!apiKey) {
+    showError("API key belum diatur. Klik ikon pengaturan (⚙) di kanan atas untuk menambahkannya.");
     openSettings();
+    return;
+  }
+
+  if (!currentImage) {
+    showError("Upload gambar terlebih dahulu.");
+    return;
+  }
+
+  const style = dom.styleSelect.value;
+  const lang = dom.langSelect.value;
+  const model = localStorage.getItem(STORAGE_KEYS.model) || "gemini-2.0-flash";
+
+  let instruction = STYLE_INSTRUCTIONS[style] || STYLE_INSTRUCTIONS.descriptive;
+  const langSuffix = LANG_INSTRUCTIONS[lang] || "";
+  if (langSuffix) instruction += langSuffix;
+
+  setLoading(true);
+  dom.resultBox.value = "";
+  dom.copyBtn.disabled = true;
+
+  try {
+    const prompt = await callGemini({
+      apiKey,
+      model,
+      instruction,
+      imageBase64: currentImage.base64,
+      mimeType: currentImage.mimeType,
+    });
+    dom.resultBox.value = prompt;
+    updateCopyButton();
+    showStatus("✅ Prompt berhasil dibuat!");
+  } catch (err) {
+    console.error("Gemini call failed:", err);
+    showError(err.message || "Terjadi kesalahan tak dikenal.");
+  } finally {
+    setLoading(false);
   }
 }
 
-// ======================================================================
-// FILE HANDLING
-// ======================================================================
+// ── Copy to clipboard ────────────────────────────────────────────────────
+
+async function onCopy() {
+  const text = dom.resultBox.value;
+  if (!text) return;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    // Visual feedback
+    dom.copyBtn.classList.add("copied");
+    const span = dom.copyBtn.querySelector("span");
+    const prev = span.textContent;
+    span.textContent = "Copied!";
+    showStatus("📋 Prompt disalin ke clipboard!");
+    setTimeout(() => {
+      dom.copyBtn.classList.remove("copied");
+      span.textContent = prev;
+    }, 1500);
+  } catch {
+    // Fallback for older browsers or non-HTTPS
+    dom.resultBox.removeAttribute("readonly");
+    dom.resultBox.select();
+    try {
+      document.execCommand("copy");
+      showStatus("📋 Prompt disalin ke clipboard!");
+    } catch {
+      showError("Gagal menyalin. Silakan select & copy manual.");
+    }
+    dom.resultBox.setAttribute("readonly", "");
+    window.getSelection()?.removeAllRanges();
+  }
+}
+
+// ── Settings modal ───────────────────────────────────────────────────────
+
+function openSettings() {
+  dom.apiKeyInput.value = localStorage.getItem(STORAGE_KEYS.apiKey) || "";
+  dom.modelSelect.value = localStorage.getItem(STORAGE_KEYS.model) || "gemini-2.0-flash";
+  dom.settingsModal.hidden = false;
+
+  // Focus the API key input after animation frame
+  requestAnimationFrame(() => dom.apiKeyInput.focus());
+
+  // Trap focus inside modal
+  trapFocus(dom.settingsModal);
+}
+
+function closeSettings() {
+  dom.settingsModal.hidden = true;
+  releaseFocus();
+}
+
+function saveSettings() {
+  const key = dom.apiKeyInput.value.trim();
+  if (key) {
+    localStorage.setItem(STORAGE_KEYS.apiKey, key);
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.apiKey);
+  }
+  localStorage.setItem(STORAGE_KEYS.model, dom.modelSelect.value);
+  closeSettings();
+  showStatus("✅ Pengaturan disimpan!");
+}
+
+/** Toggle API key visibility (password ↔ text) */
+function toggleKeyVisibility() {
+  const input = dom.apiKeyInput;
+  const isPassword = input.type === "password";
+  input.type = isPassword ? "text" : "password";
+  dom.toggleKeyVisibility.setAttribute("aria-label", isPassword ? "Sembunyikan API key" : "Tampilkan API key");
+}
+
+// ── Focus trap (for modal accessibility) ─────────────────────────────────
+
+let focusTrapElement = null;
+let previousFocusedElement = null;
+
+function trapFocus(element) {
+  focusTrapElement = element;
+  previousFocusedElement = document.activeElement;
+  const focusable = element.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  if (focusable.length > 0) {
+    focusable[0].focus();
+  }
+}
+
+function releaseFocus() {
+  focusTrapElement = null;
+  if (previousFocusedElement) {
+    previousFocusedElement.focus();
+    previousFocusedElement = null;
+  }
+}
+
+// ── Drag & Drop helpers ──────────────────────────────────────────────────
+
 function onFileSelected(e) {
   const file = e.target.files?.[0];
   if (file) loadImageFile(file);
@@ -164,219 +426,81 @@ function onPaste(e) {
   }
 }
 
-function loadImageFile(file) {
-  hideError();
+// ── Initialization ───────────────────────────────────────────────────────
 
-  // Validate
-  if (!file.type.startsWith("image/")) {
-    showError("File harus berupa gambar (PNG, JPG, atau WebP).");
-    return;
-  }
-  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-  if (file.size > MAX_SIZE) {
-    showError("Ukuran file maksimal 10MB.");
-    return;
-  }
+function init() {
+  // Restore saved model preference
+  const savedModel = localStorage.getItem(STORAGE_KEYS.model);
+  if (savedModel && dom.modelSelect) dom.modelSelect.value = savedModel;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const dataUrl = reader.result;
-    const base64 = dataUrl.split(",")[1];
-    currentImage = {
-      base64,
-      mimeType: file.type,
-      dataUrl,
-    };
-    showPreview(dataUrl);
-    generateBtn.disabled = false;
-  };
-  reader.onerror = () => showError("Gagal membaca file.");
-  reader.readAsDataURL(file);
-}
+  // ── File input ──
+  dom.fileInput.addEventListener("change", onFileSelected);
 
-function showPreview(dataUrl) {
-  preview.src = dataUrl;
-  preview.hidden = false;
-  dropzoneContent.hidden = true;
-  clearBtn.hidden = false;
-}
-
-function clearImage() {
-  currentImage = null;
-  fileInput.value = "";
-  preview.src = "";
-  preview.hidden = true;
-  dropzoneContent.hidden = false;
-  clearBtn.hidden = true;
-  generateBtn.disabled = true;
-  hideError();
-}
-
-// ======================================================================
-// GEMINI API CALL
-// ======================================================================
-async function onGenerate() {
-  hideError();
-
-  const apiKey = localStorage.getItem(STORAGE_KEY_API);
-  if (!apiKey) {
-    showError("API key belum diatur. Klik ikon pengaturan di kanan atas.");
-    openSettings();
-    return;
-  }
-  if (!currentImage) {
-    showError("Upload gambar terlebih dahulu.");
-    return;
-  }
-
-  const style = styleSelect.value;
-  const lang = langSelect.value;
-  const model = localStorage.getItem(STORAGE_KEY_MODEL) || "gemini-2.0-flash";
-
-  let instruction = STYLE_INSTRUCTIONS[style] || STYLE_INSTRUCTIONS.descriptive;
-  if (lang === "id") {
-    instruction += "\n\nIMPORTANT: Write the final prompt in Bahasa Indonesia (natural, fluent Indonesian).";
-  }
-
-  setLoading(true);
-  resultBox.value = "";
-  copyBtn.disabled = true;
-
-  try {
-    const prompt = await callGemini({
-      apiKey,
-      model,
-      instruction,
-      imageBase64: currentImage.base64,
-      mimeType: currentImage.mimeType,
-    });
-    resultBox.value = prompt.trim();
-    copyBtn.disabled = false;
-  } catch (err) {
-    console.error(err);
-    showError(err.message || "Terjadi kesalahan saat memanggil Gemini API.");
-  } finally {
-    setLoading(false);
-  }
-}
-
-async function callGemini({ apiKey, model, instruction, imageBase64, mimeType }) {
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-    model
-  )}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-  const body = {
-    contents: [
-      {
-        parts: [
-          { text: instruction },
-          {
-            inline_data: {
-              mime_type: mimeType,
-              data: imageBase64,
-            },
-          },
-        ],
-      },
-    ],
-    generationConfig: {
-      temperature: 0.7,
-      topP: 0.95,
-      maxOutputTokens: 1024,
-    },
-  };
-
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  // ── Drag & drop ──
+  dom.dropzone.addEventListener("dragenter", (e) => { e.preventDefault(); dom.dropzone.classList.add("drag-over"); });
+  dom.dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dom.dropzone.classList.add("drag-over"); });
+  dom.dropzone.addEventListener("dragleave", (e) => { e.preventDefault(); dom.dropzone.classList.remove("drag-over"); });
+  dom.dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dom.dropzone.classList.remove("drag-over");
+    onDrop(e);
   });
 
-  if (!res.ok) {
-    let msg = `Gemini API error (${res.status})`;
-    try {
-      const errJson = await res.json();
-      if (errJson?.error?.message) msg += `: ${errJson.error.message}`;
-    } catch {
-      /* ignore */
+  // ── Dropzone keyboard support (Enter/Space to open file dialog) ──
+  dom.dropzone.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      dom.fileInput.click();
     }
-    if (res.status === 400) msg += "\nCek apakah API key valid.";
-    if (res.status === 403) msg += "\nAPI key ditolak — pastikan sudah aktif untuk Generative Language API.";
-    if (res.status === 429) msg += "\nKuota habis — coba lagi nanti atau ganti model.";
-    throw new Error(msg);
-  }
+  });
 
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts
-    ?.map((p) => p.text)
-    .filter(Boolean)
-    .join("\n");
-  if (!text) {
-    throw new Error("Gemini tidak mengembalikan teks. Coba lagi atau ganti gambar.");
-  }
-  return text;
-}
+  // ── Clipboard paste ──
+  document.addEventListener("paste", onPaste);
 
-// ======================================================================
-// UI HELPERS
-// ======================================================================
-function setLoading(loading) {
-  generateBtn.disabled = loading || !currentImage;
-  btnText.textContent = loading ? "Membuat prompt..." : "Generate Prompt";
-  btnSpinner.hidden = !loading;
-}
+  // ── Clear button ──
+  dom.clearBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); clearImage(); });
 
-function showError(msg) {
-  errorBox.textContent = msg;
-  errorBox.hidden = false;
-}
-function hideError() {
-  errorBox.hidden = true;
-  errorBox.textContent = "";
-}
+  // ── Generate button ──
+  dom.generateBtn.addEventListener("click", onGenerate);
 
-async function onCopy() {
-  if (!resultBox.value) return;
-  try {
-    await navigator.clipboard.writeText(resultBox.value);
-    copyBtn.classList.add("copied");
-    const span = copyBtn.querySelector("span");
-    const prev = span.textContent;
-    span.textContent = "Copied!";
-    setTimeout(() => {
-      copyBtn.classList.remove("copied");
-      span.textContent = prev;
-    }, 1500);
-  } catch {
-    // Fallback
-    resultBox.removeAttribute("readonly");
-    resultBox.select();
-    document.execCommand("copy");
-    resultBox.setAttribute("readonly", "");
+  // ── Copy button ──
+  dom.copyBtn.addEventListener("click", onCopy);
+
+  // ── Result textarea: update copy button on input (if user manually edits) ──
+  dom.resultBox.addEventListener("input", updateCopyButton);
+
+  // ── Settings modal ──
+  dom.settingsBtn.addEventListener("click", openSettings);
+  dom.settingsModal.addEventListener("click", (e) => {
+    if (e.target.dataset.close !== undefined || e.target === dom.settingsModal) {
+      closeSettings();
+    }
+  });
+  dom.saveKeyBtn.addEventListener("click", saveSettings);
+  dom.clearKeyBtn.addEventListener("click", () => {
+    dom.apiKeyInput.value = "";
+    localStorage.removeItem(STORAGE_KEYS.apiKey);
+    showStatus("🗑️ API key dihapus.");
+  });
+  dom.toggleKeyVisibility.addEventListener("click", toggleKeyVisibility);
+
+  // ── Escape to close modal ──
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !dom.settingsModal.hidden) {
+      closeSettings();
+    }
+  });
+
+  // ── Show settings on first visit if no API key ──
+  if (!localStorage.getItem(STORAGE_KEYS.apiKey)) {
+    // Slight delay so the page renders first
+    setTimeout(openSettings, 600);
   }
 }
 
-// ======================================================================
-// SETTINGS MODAL
-// ======================================================================
-function openSettings() {
-  apiKeyInput.value = localStorage.getItem(STORAGE_KEY_API) || "";
-  modelSelect.value = localStorage.getItem(STORAGE_KEY_MODEL) || "gemini-2.0-flash";
-  settingsModal.hidden = false;
+// ── Boot ─────────────────────────────────────────────────────────────────
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
 }
-function closeSettings() {
-  settingsModal.hidden = true;
-}
-function saveSettings() {
-  const key = apiKeyInput.value.trim();
-  if (key) {
-    localStorage.setItem(STORAGE_KEY_API, key);
-  } else {
-    localStorage.removeItem(STORAGE_KEY_API);
-  }
-  localStorage.setItem(STORAGE_KEY_MODEL, modelSelect.value);
-  closeSettings();
-}
-
-// ======================================================================
-init();
