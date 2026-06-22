@@ -75,3 +75,5 @@ Lalu buka `http://localhost:8000`.
 ## 📝 Lisensi
 
 MIT — bebas digunakan, dimodifikasi, dan didistribusikan.
+
+> 🧪 Di-*test* menggunakan Celiuz AI Agent sandbox tools.
