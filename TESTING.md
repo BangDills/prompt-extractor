@@ -21,4 +21,4 @@ Ini adalah file test untuk memverifikasi tool `write_files` bekerja.
 - `sandbox_write_file` — ❌ unauthorized token
 - `sandbox_write_files` — ❌ unauthorized token
 
-Dibuat: 22 Juni 2026
+Dibuat: 22 Juni 2026\n\n_Catatan: file ini diedit menggunakan `edit_file` untuk veriksi._
