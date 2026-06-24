@@ -376,9 +376,11 @@ function toggleKeyVisibility() {
 
 // ── Focus trap (for modal accessibility) ─────────────────────────────────
 
+let focusTrapElement = null;
 let previousFocusedElement = null;
 
 function trapFocus(element) {
+  focusTrapElement = element;
   previousFocusedElement = document.activeElement;
   const focusable = element.querySelectorAll(
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -389,7 +391,6 @@ function trapFocus(element) {
 }
 
 function releaseFocus() {
-  focusTrapElement = null;
   if (previousFocusedElement) {
     previousFocusedElement.focus();
     previousFocusedElement = null;
