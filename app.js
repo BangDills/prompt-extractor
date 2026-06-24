@@ -237,10 +237,8 @@ async function callGemini({ apiKey, model, instruction, imageBase64, mimeType })
       // response not JSON — use status text
       serverMsg = response.statusText || "";
     }
-    const msg = serverMsg
-      ? `Gemini API error (${response.status}): ${serverMsg}`
-      : `Gemini API error (${response.status})`;
-    throw new Error(formatError(msg, response.status));
+    const suffix = serverMsg ? `: ${serverMsg}` : "";
+    throw new Error(formatError(`Gemini API error (${response.status})${suffix}`, response.status));
   }
 
   const data = await response.json();
