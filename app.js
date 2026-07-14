@@ -7,6 +7,12 @@
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = /^image\/(png|jpeg|webp)$/;
 
+const IMAGE_RESIZE = {
+  maxWidth: 1280,
+  maxHeight: 1280,
+  outputType: "image/jpeg",
+  outputQuality: 0.85,
+};
 const STORAGE_KEYS = {
   apiKey: "imgprompt.apiKey",
   model: "imgprompt.model",
