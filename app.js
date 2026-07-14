@@ -204,7 +204,7 @@ function clearImage() {
  * @returns {Promise<string>} The generated prompt text
  */
 async function callGemini({ apiKey, model, instruction, imageBase64, mimeType }) {
-  const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent`;
 
   const payload = {
     contents: [
@@ -224,7 +224,7 @@ async function callGemini({ apiKey, model, instruction, imageBase64, mimeType })
 
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify(payload),
   });
 
