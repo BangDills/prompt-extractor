@@ -380,19 +380,46 @@ function toggleKeyVisibility() {
 
 let focusTrapElement = null;
 let previousFocusedElement = null;
+let focusTrapHandler = null;
+
+function getFocusableElements(element) {
+  return Array.from(
+    element.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((el) => el.offsetParent !== null && !el.disabled);
+}
 
 function trapFocus(element) {
   focusTrapElement = element;
   previousFocusedElement = document.activeElement;
-  const focusable = element.querySelectorAll(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
-  if (focusable.length > 0) {
-    focusable[0].focus();
-  }
+  const focusable = getFocusableElements(element);
+  if (focusable.length > 0) focusable[0].focus();
+
+  focusTrapHandler = (e) => {
+    if (e.key !== "Tab" || !focusTrapElement) return;
+    const focusable = getFocusableElements(focusTrapElement);
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener("keydown", focusTrapHandler);
 }
 
 function releaseFocus() {
+  if (focusTrapHandler) {
+    document.removeEventListener("keydown", focusTrapHandler);
+    focusTrapHandler = null;
+  }
   focusTrapElement = null;
   if (previousFocusedElement) {
     previousFocusedElement.focus();
