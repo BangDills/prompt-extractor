@@ -97,6 +97,61 @@ const LANG_INSTRUCTIONS = Object.freeze({
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
+/**
+ * Resize and compress an image File via canvas.
+ * Returns a JPEG data URL and base64 string.
+ * @param {File} file
+ * @returns {Promise<{dataUrl: string, base64: string, mimeType: string}>}
+ */
+function resizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      let { width, height } = img;
+      const { maxWidth, maxHeight, outputType, outputQuality } = IMAGE_RESIZE;
+
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+      } else {
+        URL.revokeObjectURL(url);
+        reject(new Error("Browser tidak mendukung canvas untuk memproses gambar."));
+        return;
+      }
+
+      const dataUrl = canvas.toDataURL(outputType, outputQuality);
+      URL.revokeObjectURL(url);
+
+      const base64 = dataUrl.split(",")[1];
+      if (!base64) {
+        reject(new Error("Gagal memproses gambar setelah resize."));
+        return;
+      }
+
+      resolve({ dataUrl, base64, mimeType: outputType });
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Gagal memuat gambar untuk diproses."));
+    };
+
+    img.src = url;
+  });
+}
+
 /** Format error message with consistent prefix */
 function formatError(msg, status = null) {
   let out = `Error: ${msg}`;
