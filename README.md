@@ -1,4 +1,4 @@
-# Image to Prompt
+# Celiuz Prompt Extractor
 
 Web tool sederhana untuk mengubah foto/gambar menjadi **prompt AI** yang siap pakai di Midjourney, Stable Diffusion, DALL·E, Flux, atau model anime Danbooru.
 
