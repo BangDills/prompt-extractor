@@ -144,7 +144,7 @@
     aria-labelledby="settingsTitle"
     aria-describedby="settingsDesc"
   >
-    <div class="modal-backdrop" data-close></div>
+    <div class="modal-backdrop" data-close="true"></div>
     <div class="modal-content">
       <div class="modal-header">
         <h3 id="settingsTitle">Pengaturan API Key</h3>
@@ -190,8 +190,8 @@
         </select>
       </div>
       <div class="modal-footer">
-        <button id="clearKeyBtn" class="secondary-btn danger-btn">Hapus Key</button>
-        <button id="saveKeyBtn" class="primary-btn">Simpan</button>
+        <button type="button" id="clearKeyBtn" class="secondary-btn danger-btn">Hapus Key</button>
+        <button type="button" id="saveKeyBtn" class="primary-btn">Simpan</button>
       </div>
     </div>
   </div>
