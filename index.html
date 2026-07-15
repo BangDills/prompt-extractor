@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#0b0d12" />
   <meta name="robots" content="index, follow" />
   <meta property="og:title" content="Image to Prompt — Ubah Gambar Jadi Prompt AI" />
-  <meta property="og:description" content="Upload gambar dan dapatkan prompt AI siap pakai untuk Stable Diffusion, Midjourney, DALL·E, Flux — gratis." />
+  <meta property="og:description" content="Upload gambar dan dapatkan prompt AI siap pakai untuk Midjourney, Stable Diffusion, DALL·E, Flux — gratis." />
   <meta property="og:type" content="website" />
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>" />
@@ -23,17 +23,20 @@
         <span class="logo-icon" aria-hidden="true">🎨</span>
         Image to Prompt
       </h1>
-      <button
-        id="settingsBtn"
-        class="icon-btn"
-        title="Pengaturan API Key"
-        aria-label="Buka pengaturan API Key"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-      </button>
+      <div class="header-actions">
+        <span id="apiKeyBadge" class="badge" hidden aria-hidden="true"></span>
+        <button
+          id="settingsBtn"
+          class="icon-btn"
+          title="Pengaturan API Key"
+          aria-label="Buka pengaturan API Key"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -94,7 +97,7 @@
           <span class="btn-spinner" hidden aria-hidden="true"></span>
         </button>
 
-        <!-- Status messages (hidden by default) -->
+        <!-- Status messages (deprecated, kept for compatibility) -->
         <div id="statusMessage" class="status-message" role="status" aria-live="polite" hidden></div>
       </div>
 
@@ -119,17 +122,25 @@
           aria-label="Hasil prompt yang digenerate"
           rows="10"
         ></textarea>
+        <div id="resultSkeleton" class="skeleton" hidden aria-hidden="true">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-line short"></div>
+        </div>
         <div id="errorBox" class="error-box" role="alert" hidden></div>
       </div>
     </section>
 
     <section class="tips" aria-labelledby="tips-title">
-      <h3 id="tips-title">💡 Tips</h3>
+      <h3 id="tips-title">💡 Tips & Pintasan Keyboard</h3>
       <ul>
         <li>Gunakan gambar dengan resolusi jelas untuk hasil terbaik.</li>
         <li>Pilih gaya prompt sesuai tool AI yang kamu gunakan.</li>
         <li>Prompt bisa kamu edit lebih lanjut sesuai kebutuhan.</li>
         <li>Tekan <kbd>Ctrl</kbd> + <kbd>V</kbd> untuk paste gambar langsung dari clipboard.</li>
+        <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> untuk generate, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> untuk copy hasil.</li>
       </ul>
     </section>
   </main>
@@ -195,6 +206,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast container -->
+  <div id="toastContainer" class="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <footer class="site-footer" role="contentinfo">
     <div class="container">
