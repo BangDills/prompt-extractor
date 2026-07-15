@@ -26,9 +26,12 @@ const dom = {
   get styleSelect() { return document.getElementById("styleSelect"); },
   get langSelect() { return document.getElementById("langSelect"); },
   get resultBox() { return document.getElementById("result"); },
+  get resultSkeleton() { return document.getElementById("resultSkeleton"); },
   get copyBtn() { return document.getElementById("copyBtn"); },
   get errorBox() { return document.getElementById("errorBox"); },
   get statusMessage() { return document.getElementById("statusMessage"); },
+  get toastContainer() { return document.getElementById("toastContainer"); },
+  get apiKeyBadge() { return document.getElementById("apiKeyBadge"); },
   get settingsBtn() { return document.getElementById("settingsBtn"); },
   get settingsModal() { return document.getElementById("settingsModal"); },
   get apiKeyInput() { return document.getElementById("apiKeyInput"); },
@@ -86,7 +89,7 @@ const STYLE_INSTRUCTIONS = Object.freeze({
 // Indonesian language instruction suffix
 const LANG_INSTRUCTIONS = Object.freeze({
   en: "",
-  id: "\n\nIMPORTANT: Write the final prompt in Bahasa Indonesia (natural, fluent Indonesian, not a literal translation of English).",
+  id: "\n\nIMPORTANT: Write the final prompt in natural, fluent Bahasa Indonesia. Do not mix English words unless they are proper nouns or AI tool names. Jangan terjemahkan kata demi kata dari bahasa Inggris; gunakan Bahasa Indonesia yang lancar.",
 });
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -101,19 +104,53 @@ function formatError(msg, status = null) {
   return out;
 }
 
-/** Show a transient status message (for success/fyi, not error) */
+/** Show a toast notification */
+function showToast(message, type = "info", durationMs = 2500) {
+  const container = dom.toastContainer;
+  if (!container) return;
+
+  const icons = {
+    success: "✅",
+    error: "❌",
+    info: "ℹ️",
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.setAttribute("role", type === "error" ? "alert" : "status");
+  toast.innerHTML = `<span class="toast-icon" aria-hidden="true">${icons[type] || icons.info}</span><span class="toast-message">${escapeHtml(message)}</span>`;
+
+  container.appendChild(toast);
+
+  // Remove after animation completes (toast auto-animates out at 2.5s + duration)
+  const removeMs = Math.max(durationMs + 250, 3000);
+  setTimeout(() => {
+    toast.remove();
+  }, removeMs);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/** Show a transient status message (legacy, kept for compatibility) */
 function showStatus(msg, durationMs = 2500) {
   const el = dom.statusMessage;
-  if (!el) return;
-  el.textContent = msg;
-  el.hidden = false;
-  clearTimeout(el._timeout);
-  el._timeout = setTimeout(() => { el.hidden = true; }, durationMs);
+  if (el) {
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(el._timeout);
+    el._timeout = setTimeout(() => { el.hidden = true; }, durationMs);
+  }
+  showToast(msg, "success", durationMs);
 }
 
 function showError(msg) {
   dom.errorBox.textContent = msg;
   dom.errorBox.hidden = false;
+  showToast(msg, "error", 4000);
 }
 
 function hideError() {
@@ -127,11 +164,36 @@ function setLoading(loading) {
   dom.generateBtn.setAttribute("aria-busy", loading);
   dom.btnText.textContent = loading ? "Membuat prompt..." : "Generate Prompt";
   dom.btnSpinner.hidden = !loading;
+
+  if (loading) {
+    dom.resultBox.hidden = true;
+    dom.resultSkeleton.hidden = false;
+  } else {
+    dom.resultSkeleton.hidden = true;
+    dom.resultBox.hidden = false;
+  }
 }
 
 /** Enable / disable copy button based on result content */
 function updateCopyButton() {
   dom.copyBtn.disabled = !dom.resultBox.value.trim();
+}
+
+// ── API Key badge indicator ────────────────────────────────────────────
+
+function updateApiKeyBadge() {
+  const badge = dom.apiKeyBadge;
+  if (!badge) return;
+  const key = localStorage.getItem(STORAGE_KEYS.apiKey);
+  if (key && key.trim()) {
+    badge.className = "badge connected";
+    badge.textContent = "Key tersimpan";
+    badge.hidden = false;
+  } else {
+    badge.className = "badge missing";
+    badge.textContent = "Key belum diatur";
+    badge.hidden = false;
+  }
 }
 
 // ── File handling ───────────────────────────────────────────────────────
@@ -193,6 +255,10 @@ function clearImage() {
   dom.dropzoneContent.hidden = false;
   dom.clearBtn.hidden = true;
   dom.generateBtn.disabled = true;
+  dom.resultBox.value = "";
+  dom.resultBox.hidden = false;
+  dom.resultSkeleton.hidden = true;
+  updateCopyButton();
   hideError();
 }
 
@@ -244,7 +310,22 @@ async function callGemini({ apiKey, model, instruction, imageBase64, mimeType })
   }
 
   const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts
+  const candidate = data?.candidates?.[0];
+
+  if (!candidate) {
+    const blockReason = data?.promptFeedback?.blockReason;
+    throw new Error(
+      blockReason
+        ? `Konten diblokir oleh Gemini: ${blockReason}. Coba gambar lain.`
+        : "Gemini tidak mengembalikan hasil. Coba lagi."
+    );
+  }
+
+  if (candidate.finishReason && candidate.finishReason !== "STOP") {
+    throw new Error(`Proses generate berhenti: ${candidate.finishReason}. Coba gambar lain atau model lain.`);
+  }
+
+  const text = candidate.content?.parts
     ?.map((p) => p.text)
     .filter(Boolean)
     .join("\n")
@@ -264,6 +345,12 @@ async function onGenerate() {
   const apiKey = (localStorage.getItem(STORAGE_KEYS.apiKey) || "").trim();
   if (!apiKey) {
     showError("API key belum diatur. Klik ikon pengaturan (⚙) di kanan atas untuk menambahkannya.");
+    openSettings();
+    return;
+  }
+
+  if (!apiKey.startsWith("AIza")) {
+    showError("API key tidak valid. Gemini API key biasanya diawali dengan 'AIza'.");
     openSettings();
     return;
   }
@@ -295,7 +382,7 @@ async function onGenerate() {
     });
     dom.resultBox.value = prompt;
     updateCopyButton();
-    showStatus("✅ Prompt berhasil dibuat!");
+    showToast("Prompt berhasil dibuat!", "success");
   } catch (err) {
     console.error("Gemini call failed:", err);
     showError(err.message || "Terjadi kesalahan tak dikenal.");
@@ -317,7 +404,7 @@ async function onCopy() {
     const span = dom.copyBtn.querySelector("span");
     const prev = span.textContent;
     span.textContent = "Copied!";
-    showStatus("📋 Prompt disalin ke clipboard!");
+    showToast("Prompt disalin ke clipboard!", "success");
     setTimeout(() => {
       dom.copyBtn.classList.remove("copied");
       span.textContent = prev;
@@ -328,7 +415,7 @@ async function onCopy() {
     dom.resultBox.select();
     try {
       document.execCommand("copy");
-      showStatus("📋 Prompt disalin ke clipboard!");
+      showToast("Prompt disalin ke clipboard!", "success");
     } catch {
       showError("Gagal menyalin. Silakan select & copy manual.");
     }
@@ -364,8 +451,9 @@ function saveSettings() {
     localStorage.removeItem(STORAGE_KEYS.apiKey);
   }
   localStorage.setItem(STORAGE_KEYS.model, dom.modelSelect.value);
+  updateApiKeyBadge();
   closeSettings();
-  showStatus("✅ Pengaturan disimpan!");
+  showToast("Pengaturan disimpan!", "success");
 }
 
 /** Toggle API key visibility (password ↔ text) */
@@ -382,22 +470,45 @@ let focusTrapElement = null;
 let previousFocusedElement = null;
 
 function trapFocus(element) {
-  focusTrapElement = element;
   previousFocusedElement = document.activeElement;
-  const focusable = element.querySelectorAll(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
-  if (focusable.length > 0) {
-    focusable[0].focus();
-  }
+  focusTrapElement = element;
+  const focusable = Array.from(
+    element.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((el) => !el.disabled && el.offsetParent !== null);
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  first?.focus();
+
+  element._keydownHandler = (e) => {
+    if (e.key !== "Tab" || focusable.length === 0) return;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    }
+  };
+  element.addEventListener("keydown", element._keydownHandler);
 }
 
 function releaseFocus() {
-  focusTrapElement = null;
-  if (previousFocusedElement) {
-    previousFocusedElement.focus();
-    previousFocusedElement = null;
+  const el = focusTrapElement;
+  if (el && el._keydownHandler) {
+    el.removeEventListener("keydown", el._keydownHandler);
+    delete el._keydownHandler;
   }
+  focusTrapElement = null;
+  previousFocusedElement?.focus();
+  previousFocusedElement = null;
 }
 
 // ── Drag & Drop helpers ──────────────────────────────────────────────────
@@ -426,12 +537,49 @@ function onPaste(e) {
   }
 }
 
+// ── Keyboard shortcuts ───────────────────────────────────────────────────
+
+function onDocumentKeydown(e) {
+  // Escape closes modal
+  if (e.key === "Escape" && !dom.settingsModal.hidden) {
+    closeSettings();
+    return;
+  }
+
+  // Ctrl/Cmd + Enter to generate
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    e.preventDefault();
+    if (!dom.generateBtn.disabled) {
+      onGenerate();
+    }
+    return;
+  }
+
+  // Ctrl/Cmd + Shift + C to copy result
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "c" || e.key === "C")) {
+    e.preventDefault();
+    if (!dom.copyBtn.disabled) {
+      onCopy();
+    }
+    return;
+  }
+
+  // Ctrl/Cmd + , to open settings (common convention)
+  if ((e.ctrlKey || e.metaKey) && e.key === ",") {
+    e.preventDefault();
+    openSettings();
+  }
+}
+
 // ── Initialization ───────────────────────────────────────────────────────
 
 function init() {
   // Restore saved model preference
   const savedModel = localStorage.getItem(STORAGE_KEYS.model);
   if (savedModel && dom.modelSelect) dom.modelSelect.value = savedModel;
+
+  // Initialize API key badge
+  updateApiKeyBadge();
 
   // ── File input ──
   dom.fileInput.addEventListener("change", onFileSelected);
@@ -480,16 +628,13 @@ function init() {
   dom.clearKeyBtn.addEventListener("click", () => {
     dom.apiKeyInput.value = "";
     localStorage.removeItem(STORAGE_KEYS.apiKey);
-    showStatus("🗑️ API key dihapus.");
+    updateApiKeyBadge();
+    showToast("API key dihapus.", "info");
   });
   dom.toggleKeyVisibility.addEventListener("click", toggleKeyVisibility);
 
-  // ── Escape to close modal ──
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !dom.settingsModal.hidden) {
-      closeSettings();
-    }
-  });
+  // ── Keyboard shortcuts ──
+  document.addEventListener("keydown", onDocumentKeydown);
 
   // ── Show settings on first visit if no API key ──
   if (!localStorage.getItem(STORAGE_KEYS.apiKey)) {
