@@ -91,12 +91,18 @@ const LANG_INSTRUCTIONS = Object.freeze({
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
+/** HTTP status code hints (extracted to avoid per-call allocation) */
+const STATUS_HINTS = Object.freeze({
+  400: "Cek apakah API key valid.",
+  403: "API key ditolak — pastikan sudah aktif untuk Generative Language API.",
+  429: "Kuota habis — coba lagi nanti atau ganti model.",
+});
+
 /** Format error message with consistent prefix */
 function formatError(msg, status = null) {
   let out = `Error: ${msg}`;
-  if (status) {
-    const hints = { 400: "Cek apakah API key valid.", 403: "API key ditolak — pastikan sudah aktif untuk Generative Language API.", 429: "Kuota habis — coba lagi nanti atau ganti model." };
-    if (hints[status]) out += `\n${hints[status]}`;
+  if (status && STATUS_HINTS[status]) {
+    out += `\n${STATUS_HINTS[status]}`;
   }
   return out;
 }
