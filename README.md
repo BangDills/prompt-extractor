@@ -46,7 +46,7 @@ Lalu buka `http://localhost:8000`.
 | Model | Kecepatan | Catatan |
 |---|---|---|
 | `gemini-2.0-flash` (default) | ⚡ Cepat | Free tier generous |
-| `gemini-2.5-flash` | ⚡ Cepat | Model terbaru |
+| `gemini-2.5-flash-lite` | ⚡ Cepat | Multimodal, input gambar didukung |
 | `gemini-1.5-flash` | 🐢 Sedang | Legacy, tetap support |
 
 ## 📁 Struktur Proyek
