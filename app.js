@@ -504,3 +504,39 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
+
+// ── Test hooks (only active when test runner sets window.__TEST__) ───────
+if (typeof window !== "undefined" && window.__TEST__) {
+  window.__APP__ = {
+    MAX_FILE_SIZE,
+    ALLOWED_TYPES,
+    STORAGE_KEYS,
+    GEMINI_BASE,
+    STYLE_INSTRUCTIONS,
+    LANG_INSTRUCTIONS,
+    STATUS_HINTS,
+    formatError,
+    showStatus,
+    showError,
+    hideError,
+    setLoading,
+    updateCopyButton,
+    loadImageFile,
+    showPreview,
+    clearImage,
+    callGemini,
+    onGenerate,
+    onCopy,
+    openSettings,
+    closeSettings,
+    saveSettings,
+    toggleKeyVisibility,
+    trapFocus,
+    releaseFocus,
+    onFileSelected,
+    onDrop,
+    onPaste,
+    init,
+    get currentImage() { return currentImage; },
+  };
+}
