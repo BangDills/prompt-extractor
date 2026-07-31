@@ -1,5 +1,5 @@
 /* ======================================================================
-   Image to Prompt — Logic
+   Celiuz Prompt Extractor — Logic
    Vanilla JS, zero dependencies, full client-side
    ====================================================================== */
 
