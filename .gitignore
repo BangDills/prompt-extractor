@@ -1,0 +1,38 @@
+# ── OS / Editor ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors & IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.tmp
+
+# ── Node (jika suatu saat memakai tooling) ───────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# ── Build / output ───────────────────────────────────────────────────────
+dist/
+build/
+coverage/
+
+# ── Env & secrets (jangan pernah commit API key) ─────────────────────────
+.env
+.env.*
+!.env.example
+*.local
+
+# ── Logs ─────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Misc ─────────────────────────────────────────────────────────────────
+.cache/
+.tmp/
